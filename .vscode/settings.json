@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "net.h": "c",
+        "internet": "c",
+        "string": "c",
+        "iostream": "cpp"
+    }
+}

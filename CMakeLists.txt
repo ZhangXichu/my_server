@@ -11,7 +11,7 @@ endif()
 
 add_executable(server 
     src/server.cpp
-    src/net.c)
+    src/net.cpp)
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_BINARY_DIR}")
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
