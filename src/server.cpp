@@ -12,4 +12,7 @@ int main()
     
     simple_web_server::Net net(PORT);
 
+    int socket_fd = net.get_socket_fd();
+
+    std::cout << "socket fd: " << socket_fd << std::endl;
 }

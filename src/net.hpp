@@ -18,19 +18,18 @@ public:
 
 Net(const std::string& port); // TODO: add backlog
 ~Net();
-int get_listener_socket(const std::string port);
+int get_socket_fd();
+
 
 private:
 
 std::string _port;
 int _socket_fd;
+int _backlog = 10;  // TODO: make this configurable
+int get_listener_socket(const std::string port);
 
 };
 
-
 }
-
-
-
 
 #endif

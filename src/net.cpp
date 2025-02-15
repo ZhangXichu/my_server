@@ -1,6 +1,14 @@
+#include <memory>
+
 #include "net.hpp"
 
 namespace simple_web_server {
+
+struct AddrInfoDeleter {
+    void operator()(addrinfo* ai) const {
+        if (ai) freeaddrinfo(ai);
+    }
+};
 
 Net::Net(const std::string& port)
     : _port(port)
@@ -16,12 +24,17 @@ Net::~Net()
     }
 }
 
+int Net::get_socket_fd()
+{
+    return _socket_fd;
+}
+
 int Net::get_listener_socket(const std::string port)
 {
     int sockfd;
     struct addrinfo hints{};
-    struct addrinfo *servinfo, *p;
-    // int yes = 1;
+    struct addrinfo *servinfo_raw, *p;
+    int yes = 1;
     int rv;
 
     hints.ai_flags = AI_PASSIVE;
@@ -33,24 +46,61 @@ int Net::get_listener_socket(const std::string port)
     // IPv4 or IPv6 (AF_UNSPEC) and TCP (SOCK_STREAM) and use any IP on
     // this machine (AI_PASSIVE).
 
-    if ((rv = getaddrinfo(NULL, port.c_str(), &hints, &servinfo)) != 0)
+    if ((rv = getaddrinfo(NULL, port.c_str(), &hints, &servinfo_raw)) != 0)
     {
         std::cerr << "getaddrinfo: " << gai_strerror(rv) << std::endl;
+        return -1;
     }
 
-    for (p = servinfo; p != nullptr; p = p->ai_next)
+    std::unique_ptr<addrinfo, AddrInfoDeleter> servinfo(servinfo_raw);
+
+    for (p = servinfo.get(); p != nullptr; p = p->ai_next)
     {
-        sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        // Try to make a socket based on this candidate interface
+        if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
+        {
+            continue;
+        }
 
-        std::cout << "Socket FD: " << sockfd
-                  << ", ai_family: " << p->ai_family
-                  << ", ai_socktype: " << p->ai_socktype
-                  << ", ai_protocol: " << p->ai_protocol << std::endl;
+        // SO_REUSEADDR prevents the "address already in use" errors
+        // that commonly come up when testing servers.
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+        {
+            std::cerr << strerror(errno) << std::endl;
+            close(sockfd);
+            continue;
+        }
+
+        // See if we can bind this socket to this local IP address. This
+        // associates the file descriptor (the socket descriptor) that
+        // we will read and write on with a specific IP address.
+        if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1)
+        {
+            close(sockfd);
+            continue;
+        }
+
+        // If we got here, we got a bound socket and we're done
+        break;
     }
 
-    freeaddrinfo(servinfo);
+    // If p is NULL, it means we didn't break out of the loop, above,
+    // and we don't have a good socket
+    if (p == nullptr)
+    {
+        std::cerr << "webserver: failed to find local address: " << std::endl;
+        return -3;
+    }
 
-    return 0;
+    // Start listening. This is what allows remote computers to connect
+    // to this socket/IP.
+    if (listen(sockfd, _backlog) == -1) 
+    {
+        close(sockfd);
+        return -4;
+    }
+
+    return sockfd;
 }   
 
 }
