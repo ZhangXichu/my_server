@@ -29,6 +29,15 @@ int Net::get_socket_fd()
     return _socket_fd;
 }
 
+void * Net::get_in_addr(struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
 int Net::get_listener_socket(const std::string port)
 {
     int sockfd;

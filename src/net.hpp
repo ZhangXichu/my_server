@@ -19,6 +19,7 @@ public:
 Net(const std::string& port); // TODO: add backlog
 ~Net();
 int get_socket_fd();
+void *get_in_addr(struct sockaddr *sa);
 
 
 private:
