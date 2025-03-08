@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "net.hpp"
+#include "http.hpp"
 
 #define PORT "3496"
 
@@ -45,6 +46,15 @@ int main()
 
         // new_fd is a new socket descriptor for the new connection.
         // listen_fd is still listening for new connections.
+
+        auto http = simple_web_server::Http();
+
+        const std::string header = "HTTP/1.1 200 OK";
+        const std::string content_type = "text/plain";
+        const char* body = "hello";
+        int content_length = std::strlen(body);
+
+        http.send_response(new_fd, header, content_type, body, content_length);
 
         close(new_fd);
     }
