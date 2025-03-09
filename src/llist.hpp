@@ -110,7 +110,14 @@ void *l_delete(void *data, Compare cmp)
     return nullptr;
 }
 
-
+/**
+ * Frees an array allocated with llist_array_get().
+ *
+ * NOTE: This does not modify the linked list or its data.
+ */
+static inline void array_free(void** a) {
+    delete[] a;
+}
 
 private:
 
