@@ -2,7 +2,7 @@
 
 #include "llist.hpp"
 
-namespace simple_web_server {
+namespace my_server {
 
 Llist::Llist()
     :_head(nullptr),
@@ -15,7 +15,7 @@ Llist::~Llist()
     {
         llist_node* next = current->next;
         delete current;
-        current->next;
+        current = next;
     }
 }
 

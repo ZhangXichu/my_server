@@ -4,8 +4,9 @@
 
 #include "http.hpp"
 
-namespace simple_web_server {
+namespace my_server {
 
+// Part 1 Task 1
 int Http::send_response(int fd, const std::string &header, const std::string &content_type, const void *body, int content_length)
 {
     // const int max_response_size = 262144;

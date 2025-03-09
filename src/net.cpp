@@ -2,7 +2,7 @@
 
 #include "net.hpp"
 
-namespace simple_web_server {
+namespace my_server {
 
 struct AddrInfoDeleter {
     void operator()(addrinfo* ai) const {

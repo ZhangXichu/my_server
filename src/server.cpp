@@ -13,7 +13,7 @@ int main()
     struct sockaddr_storage their_addr; // connector's address information
     char s[INET6_ADDRSTRLEN];
     
-    simple_web_server::Net net(PORT);
+    my_server::Net net(PORT);
 
     int listen_fd = net.get_socket_fd();
 
@@ -47,7 +47,7 @@ int main()
         // new_fd is a new socket descriptor for the new connection.
         // listen_fd is still listening for new connections.
 
-        auto http = simple_web_server::Http();
+        auto http = my_server::Http();
 
         const std::string header = "HTTP/1.1 200 OK";
         const std::string content_type = "text/plain";

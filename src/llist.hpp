@@ -1,7 +1,7 @@
 #ifndef LIST_H
 #define LIST_H
 
-namespace simple_web_server {
+namespace my_server {
 
 struct llist_node {
 	void *data;
@@ -67,7 +67,7 @@ void foreach(F f, void *arg)
 template<typename Compare>
 void *find(void *data, Compare cmp)
 {
-    for (llist_node* n = head; n != nullptr; n = n->next) {
+    for (llist_node* n = _head; n != nullptr; n = n->next) {
         if (cmp(data, n->data) == 0) {
             return n->data;
         }

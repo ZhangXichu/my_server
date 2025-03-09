@@ -10,7 +10,7 @@
 #include <string>
 #include <cstring>
 
-namespace simple_web_server {
+namespace my_server {
 
 class Net {
 

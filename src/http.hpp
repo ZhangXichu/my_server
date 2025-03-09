@@ -3,7 +3,7 @@
 
 #include <sys/socket.h>
 
-namespace simple_web_server {
+namespace my_server {
 
 class Http {
 
