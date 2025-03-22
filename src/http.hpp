@@ -3,6 +3,8 @@
 
 #include <sys/socket.h>
 
+#include "file.hpp"
+
 namespace my_server {
 
 class Http {
@@ -25,9 +27,25 @@ public:
  */
 int send_response(int fd, const std::string &header, const std::string &content_type, const void *body, int content_length);
 
+/**
+ * Handle HTTP request and send response
+ */
+void handle_http_request(int fd, struct cache *cache);
+
+/**
+ * Read and return a file from disk or cache
+ */
+void get_file(int fd, struct cache *cache, const std::string& request_path);
+
+/**
+ * Send a 404 response
+ */
+void resp_404(int fd);
+
 private:
 
 int _fd;
+std::string _filepath_root = "../src/server_files/";
 
 };
 

@@ -49,12 +49,14 @@ int main()
 
         auto http = my_server::Http();
 
-        const std::string header = "HTTP/1.1 200 OK";
-        const std::string content_type = "text/plain";
-        const char* body = "hello";
-        int content_length = std::strlen(body);
+        // const std::string header = "HTTP/1.1 200 OK";
+        // const std::string content_type = "text/plain";
+        // const char* body = "hello";
+        // int content_length = std::strlen(body);
 
-        http.send_response(new_fd, header, content_type, body, content_length);
+        // http.send_response(new_fd, header, content_type, body, content_length);
+
+        http.handle_http_request(new_fd, nullptr);
 
         close(new_fd);
     }

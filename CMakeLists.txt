@@ -20,7 +20,8 @@ endif()
 add_executable(server 
     src/server.cpp
     src/net.cpp
-    src/http.cpp)
+    src/http.cpp
+    src/file.cpp)
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_BINARY_DIR}")
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
@@ -29,6 +30,8 @@ add_executable(
     tests
     tests/test_llist.cpp
     src/llist.cpp
+    src/http.cpp
+    src/file.cpp
 )
 
 target_include_directories(
