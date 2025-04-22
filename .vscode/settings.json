@@ -82,6 +82,7 @@
         "unordered_set": "cpp",
         "fstream": "cpp",
         "span": "cpp",
-        "cfenv": "cpp"
+        "cfenv": "cpp",
+        "ranges": "cpp"
     }
 }

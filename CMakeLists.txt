@@ -29,6 +29,7 @@ message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
 add_executable(
     tests
     tests/test_llist.cpp
+    tests/test_hashtable.cpp
     src/llist.cpp
     src/http.cpp
     src/file.cpp
