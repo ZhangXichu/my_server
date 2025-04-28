@@ -20,12 +20,7 @@ struct Entry {
 explicit HashTable(int size)
     :_size(size > 0 ? size : 128),
     _num_entries(0),
-    _buckets(_size) {
-        for (int i = 0; i < _size; i++) {
-            Llist llist;
-            _buckets.push_back(llist);
-        }
-    }
+    _buckets(_size) {}
 
 /**
  * Put to hash table with a string key
