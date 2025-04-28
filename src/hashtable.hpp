@@ -71,6 +71,56 @@ void put(KeyType key, ValueType value)
     return entry->data;
 }
 
+/**
+ * Erase by key.
+ *
+ * Returns the old value if present, or std::nullopt if not.
+ * Does not free the ValueType itself.
+ */
+[[nodiscard]]
+std::optional<ValueType> erase(const KeyType& key) {
+    std::size_t h   = HashFn{}(key);
+    std::size_t idx = h % _buckets.size();
+
+    void* raw = _buckets[idx].l_delete(
+        const_cast<KeyType*>(&key),    
+        [](void* a, void* b) -> int {   
+            auto* kp  = static_cast<KeyType*>(a);
+            auto* ent = static_cast<Entry*>(b);
+            return (*kp == ent->key) ? 0 : 1;
+        }
+    );
+
+    if (!raw) {
+        return std::nullopt; 
+    }
+
+    Entry* ent    = static_cast<Entry*>(raw);
+    ValueType val = std::move(ent->data);
+    delete ent;
+    --_num_entries;
+    return val;
+}
+
+
+/**
+ * Apply `f(key,data)` to every entry in the table, in no particular order.
+ */
+template<typename F>
+void foreach(F f) {
+    for (std::size_t i = 0; i < _buckets.size(); ++i) {
+        Llist& bucket = _buckets[i];
+        bucket.foreach(
+            [](void* raw_data, void* raw_f) {
+                auto* ent  = static_cast<Entry*>(raw_data);
+                auto& f    = *static_cast<F*>(raw_f);
+                f(ent->key, ent->data);
+            },
+            &f
+        );
+    }
+}
+
 
 private:
 
