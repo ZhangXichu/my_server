@@ -22,6 +22,17 @@ explicit HashTable(int size)
     _num_entries(0),
     _buckets(_size) {}
 
+~HashTable() {
+    for (auto &bucket : _buckets) {
+        bucket.foreach(
+            [](void* rawData, void*) {
+                delete static_cast<Entry*>(rawData);
+            },
+            nullptr
+        );
+    }
+}
+
 /**
  * Put to hash table with a string key
 */
