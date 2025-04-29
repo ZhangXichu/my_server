@@ -42,6 +42,11 @@ void get_file(int fd, struct cache *cache, const std::string& request_path);
  */
 void resp_404(int fd);
 
+/**
+ * Send a /d20 endpoint response
+ */
+void get_d20(int fd);
+
 private:
 
 int _fd;

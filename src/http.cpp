@@ -1,7 +1,8 @@
 #include <iostream>
 #include <cstring>
 #include <string>    
-#include <sstream>                                                                                                                                         
+#include <sstream>
+#include <random>                                                                                                                                         
 
 #include "http.hpp"
 
@@ -37,6 +38,29 @@ int Http::send_response(int fd, const std::string &header, const std::string &co
     }
 
     return rv;
+}
+
+// Part 1 Task 3
+void Http::get_d20(int fd)
+{
+    std::random_device rd; 
+    std::mt19937          gen(rd());
+    std::uniform_int_distribution<int> dist(1, 20); 
+    int roll = dist(gen);
+
+    std::string body = std::to_string(roll);
+
+    int rv = send_response(
+        fd,
+        "HTTP/1.1 200 OK",
+        "text/plain",
+        body.c_str(),
+        static_cast<int>(body.size())
+    );
+
+    if (rv < 0) {
+        perror("get_d20 send_response");
+    }
 }
 
 void Http::resp_404(int fd)
