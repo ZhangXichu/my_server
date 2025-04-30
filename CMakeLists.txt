@@ -33,6 +33,7 @@ add_executable(
     src/llist.cpp
     src/http.cpp
     src/file.cpp
+    src/mime.cpp
 )
 
 target_include_directories(
