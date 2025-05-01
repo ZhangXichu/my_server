@@ -34,7 +34,7 @@ void *tail();
 /**
  * Return the number of elements in the list
  */
-int count();
+std::size_t count();
 /**
  * Allocates and returns a new NULL-terminated array of pointers to data
  * elements in the list.

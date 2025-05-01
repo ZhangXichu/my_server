@@ -81,11 +81,12 @@ void *Llist::tail()
     return tail->data;
 }
 
-int Llist::count()
+std::size_t Llist::count()
 {
     return _count;
 }
 
+// TODO: forbid write into the returned array
 void **Llist::array_get() const
 {
     if (!_head)

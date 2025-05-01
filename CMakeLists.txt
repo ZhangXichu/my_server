@@ -38,6 +38,7 @@ add_executable(
     tests
     tests/test_llist.cpp
     tests/test_hashtable.cpp
+    tests/test_cache.cpp
     $<TARGET_OBJECTS:libserver>
 )
 

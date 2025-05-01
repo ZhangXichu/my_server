@@ -83,6 +83,8 @@
         "fstream": "cpp",
         "span": "cpp",
         "cfenv": "cpp",
-        "ranges": "cpp"
+        "ranges": "cpp",
+        "charconv": "cpp",
+        "format": "cpp"
     }
 }

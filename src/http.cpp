@@ -129,12 +129,6 @@ void Http::handle_http_request(int fd, struct cache *cache)
     }
 
     // TODO
-    // If GET, handle the get endpoints
-
-    //    Check if it's /d20 and handle that special case
-    //    Otherwise serve the requested file by calling get_file()
-
-
     // (Stretch) If POST, handle the post request
 
     return;
