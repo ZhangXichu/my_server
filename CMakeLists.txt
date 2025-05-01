@@ -17,12 +17,19 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
 
-add_executable(server 
-    src/server.cpp
+add_library(libserver OBJECT
     src/net.cpp
     src/http.cpp
     src/file.cpp
-    src/mime.cpp)
+    src/mime.cpp
+    src/llist.cpp
+    src/cache.cpp
+)
+
+
+add_executable(server 
+    src/server.cpp
+    $<TARGET_OBJECTS:libserver>)
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_BINARY_DIR}")
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
@@ -31,10 +38,7 @@ add_executable(
     tests
     tests/test_llist.cpp
     tests/test_hashtable.cpp
-    src/llist.cpp
-    src/http.cpp
-    src/file.cpp
-    src/mime.cpp
+    $<TARGET_OBJECTS:libserver>
 )
 
 target_include_directories(
