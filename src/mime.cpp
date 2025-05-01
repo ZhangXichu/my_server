@@ -4,7 +4,7 @@
 #include <cctype>
 #include <unordered_map>
 
-namespace simple_web_server {
+namespace my_server {
 
 static constexpr char DEFAULT_MIME_TYPE[] = "application/octet-stream";
 
@@ -38,4 +38,4 @@ std::string mime_type_get(const std::string &filename) {
     return DEFAULT_MIME_TYPE;
 }
 
-} // namespace simple_web_server
+} // namespace my_server

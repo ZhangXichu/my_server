@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-namespace simple_web_server {
+namespace my_server {
 
 /**
  * Return a MIME type for a given filename.
@@ -9,4 +9,4 @@ namespace simple_web_server {
  */
 std::string mime_type_get(const std::string &filename);
 
-} // namespace simple_web_server
+} // namespace my_server

@@ -5,6 +5,7 @@
 #include <random>                                                                                                                                         
 
 #include "http.hpp"
+#include "mime.hpp"
 
 namespace my_server {
 
@@ -77,22 +78,15 @@ void Http::get_file(int fd, struct cache *cache, const std::string& request_path
     try {
         File file(_filepath_root + request_path);
 
-        std::ostringstream oss;
-        oss << "HTTP/1.1 200 OK\r\n"
-            << "Content-Length: " << file.size() << "\r\n"
-            << "Content-Type: text/html\r\n"
-            << "\r\n";
-        std::string header = oss.str();
+        std::string content_type = my_server::mime_type_get(request_path);
 
-        if (send(fd, header.c_str(), header.size(), 0) == -1) {
-            std::cerr << "Error sending header\n";
-            return;
-        }
-
-        if (send(fd, reinterpret_cast<const char*>(file.data().data()), file.size(), 0) == -1) {
-            std::cerr << "Error sending file data\n";
-            return;
-        }
+        send_response(
+            fd,
+            "HTTP/1.1 200 OK",
+            content_type,
+            file.data().data(),
+            static_cast<int>(file.size())
+        );
     } catch (const std::runtime_error &e) {
         std::cerr << "Error loading file: " << e.what() << std::endl;
         resp_404(fd);
@@ -128,14 +122,7 @@ void Http::handle_http_request(int fd, struct cache *cache)
     if (method == "GET")
     {
         if (url == "/d20") {
-            int roll = 1 + rand() % 20;
-            std::ostringstream oss;
-            oss << "HTTP/1.1 200 OK\r\n"
-                << "Content-Length: " << 2 << "\r\n"
-                << "Content-Type: text/plain\r\n"
-                << "\r\n" << roll;
-            std::string response = oss.str();
-            send(fd, response.c_str(), response.size(), 0);
+            get_d20(fd);
         } else {
             get_file(fd, cache, url);
         }

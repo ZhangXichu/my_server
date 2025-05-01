@@ -49,7 +49,7 @@ int main()
 
         auto http = my_server::Http();
 
-        http.get_d20(new_fd);
+        http.handle_http_request(new_fd, /*cache=*/nullptr);
 
         close(new_fd);
     }
