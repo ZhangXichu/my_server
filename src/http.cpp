@@ -166,7 +166,7 @@ char *Http::find_start_of_body(char *header)
 {
     char *p = header;
     while (*p) {
-        // detect the first “newline”
+        // detect the first newline
         int nl1len = 0;
         if (p[0] == '\r' && p[1] == '\n') {
             nl1len = 2;
@@ -178,7 +178,7 @@ char *Http::find_start_of_body(char *header)
             ++p;
             continue;
         }
-        // detect the second “newline” immediately after the first
+        // detect the second newline immediately after the first
         char *q = p + nl1len;
         int nl2len = 0;
         if (q[0] == '\r' && q[1] == '\n') {
