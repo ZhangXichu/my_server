@@ -25,6 +25,8 @@ int main()
 
     std::cout << "webserver: waiting for connections on port " << PORT << std::endl;
 
+    my_server::Cache cache(10, 128);
+
     while(true)
     {
         socklen_t sin_size{sizeof(their_addr)};
@@ -49,7 +51,7 @@ int main()
 
         auto http = my_server::Http();
 
-        http.handle_http_request(new_fd, /*cache=*/nullptr);
+        http.handle_http_request(new_fd, cache);
 
         close(new_fd);
     }

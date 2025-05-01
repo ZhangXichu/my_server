@@ -4,17 +4,13 @@
 #include <sys/socket.h>
 
 #include "file.hpp"
+#include "cache.hpp"
 
 namespace my_server {
 
 class Http {
 
 public:
-
-/**
- * Handle HTTP request and send response
- */
-// void handle_http_request(struct cache *cache);
 
 /**
  * Send an HTTP response
@@ -30,12 +26,12 @@ int send_response(int fd, const std::string &header, const std::string &content_
 /**
  * Handle HTTP request and send response
  */
-void handle_http_request(int fd, struct cache *cache);
+void handle_http_request(int fd, Cache &cache);
 
 /**
  * Read and return a file from disk or cache
  */
-void get_file(int fd, struct cache *cache, const std::string& request_path);
+void get_file(int fd, Cache &cache, const std::string& request_path);
 
 /**
  * Send a 404 response

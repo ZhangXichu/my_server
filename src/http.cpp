@@ -71,14 +71,43 @@ void Http::resp_404(int fd)
 }
 
 // Part 1 Task 2
-void Http::get_file(int fd, struct cache *cache, const std::string& request_path)
+// Part 2 Task 3
+void Http::get_file(int fd, Cache &cache, const std::string& request_path)
 {
-    (void) cache;
+    std::string path = request_path;
+    if (!path.empty() && path.front() == '/')
+        path.erase(0, 1);
+
+    // check cache
+    if (auto *entry = cache.get(path)) {
+        // cache hit
+        std::cout << "[CACHE HIT]  " << path << "\n";
+        
+        send_response(
+            fd,
+            "HTTP/1.1 200 OK",
+            entry->content_type,
+            entry->content.data(),
+            static_cast<int>(entry->content.size())
+        );
+        return;
+    }
+
+    // cache miss
+    std::cout << "[CACHE MISS] " << path << "\n";
 
     try {
         File file(_filepath_root + request_path);
 
-        std::string content_type = my_server::mime_type_get(request_path);
+        std::string content_type = mime_type_get(request_path);
+
+        // add to cache
+        cache.put(
+            path,
+            content_type,
+            file.data().data(),
+            file.size()
+        );
 
         send_response(
             fd,
@@ -87,17 +116,16 @@ void Http::get_file(int fd, struct cache *cache, const std::string& request_path
             file.data().data(),
             static_cast<int>(file.size())
         );
-    } catch (const std::runtime_error &e) {
+    } 
+    catch (const std::runtime_error &e) {
         std::cerr << "Error loading file: " << e.what() << std::endl;
         resp_404(fd);
     }
 }
 
 
-void Http::handle_http_request(int fd, struct cache *cache)
+void Http::handle_http_request(int fd, Cache &cache)
 {
-    (void) cache;
-
     const int request_buffer_size = 65536; // 64K
     char request[request_buffer_size];
 
@@ -132,7 +160,6 @@ void Http::handle_http_request(int fd, struct cache *cache)
     // (Stretch) If POST, handle the post request
 
     return;
-
 }
 
 }
