@@ -82,7 +82,7 @@ void Http::get_file(int fd, Cache &cache, const std::string& request_path)
     if (auto *entry = cache.get(path)) {
         // cache hit
         std::cout << "[CACHE HIT]  " << path << "\n";
-        
+
         send_response(
             fd,
             "HTTP/1.1 200 OK",
@@ -160,6 +160,43 @@ void Http::handle_http_request(int fd, Cache &cache)
     // (Stretch) If POST, handle the post request
 
     return;
+}
+
+char *Http::find_start_of_body(char *header)
+{
+    char *p = header;
+    while (*p) {
+        // detect the first “newline”
+        int nl1len = 0;
+        if (p[0] == '\r' && p[1] == '\n') {
+            nl1len = 2;
+        }
+        else if (p[0] == '\n' || p[0] == '\r') {
+            nl1len = 1;
+        }
+        else {
+            ++p;
+            continue;
+        }
+        // detect the second “newline” immediately after the first
+        char *q = p + nl1len;
+        int nl2len = 0;
+        if (q[0] == '\r' && q[1] == '\n') {
+            nl2len = 2;
+        }
+        else if (q[0] == '\n' || q[0] == '\r') {
+            nl2len = 1;
+        }
+        else {
+            // only one newline in a row — keep scanning
+            ++p;
+            continue;
+        }
+        // we found two newlines in a row → end of headers.
+        return q + nl2len;
+    }
+    // no header/body boundary found
+    return nullptr;
 }
 
 }

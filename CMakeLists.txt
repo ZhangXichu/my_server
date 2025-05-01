@@ -39,6 +39,7 @@ add_executable(
     tests/test_llist.cpp
     tests/test_hashtable.cpp
     tests/test_cache.cpp
+    tests/test_http.cpp
     $<TARGET_OBJECTS:libserver>
 )
 

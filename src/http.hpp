@@ -43,6 +43,17 @@ void resp_404(int fd);
  */
 void get_d20(int fd);
 
+/**
+ * Locate the first byte of the HTTP message body, i.e. the
+ * character immediately following the end of the header.
+ * Handles “newlines” of \r\n, \n, or \r in any combination.
+ *
+ * @param header  a null-terminated buffer containing the full request
+ * @return pointer into header[] at the first byte of the body, or nullptr
+ *         if no complete header-body boundary is found
+ */
+char *find_start_of_body(char *header);
+
 private:
 
 int _fd;
