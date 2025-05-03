@@ -49,6 +49,12 @@ void put(const std::string &path, const std::string &content_type, const void *d
  */
 Entry* get(const std::string &path);
 
+/**
+ * Remove an entry from the cache (if it exists).
+ * After this, a GET will fetch the file from disk again.
+ */
+void erase(const std::string &path);
+
 private:
 
 std::size_t _max_size;
