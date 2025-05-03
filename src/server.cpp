@@ -26,6 +26,7 @@ int main()
     std::cout << "webserver: waiting for connections on port " << PORT << std::endl;
 
     my_server::Cache cache(10, 128);
+    auto http = my_server::Http();
 
     while(true)
     {
@@ -35,7 +36,7 @@ int main()
         // makes a new connection:
         new_fd = accept(listen_fd, (struct sockaddr *)&their_addr, &sin_size);
 
-        if (new_fd == -1)
+        if (new_fd < 0)
         {
             std::cerr << "accept" << std::endl;
             continue;
@@ -48,9 +49,6 @@ int main()
 
         // new_fd is a new socket descriptor for the new connection.
         // listen_fd is still listening for new connections.
-
-        auto http = my_server::Http();
-
         http.handle_http_request(new_fd, cache);
 
         close(new_fd);

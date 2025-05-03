@@ -2,7 +2,8 @@
 #include <cstring>
 #include <string>    
 #include <sstream>
-#include <random>                                                                                                                                         
+#include <random>
+#include <fcntl.h>                                                                                                                                           
 
 #include "http.hpp"
 #include "mime.hpp"
@@ -154,10 +155,13 @@ void Http::handle_http_request(int fd, Cache &cache)
         } else {
             get_file(fd, cache, url);
         }
+    } else if (method == "POST") { // Stretch goals 1
+        post_save(fd, cache, url, request, bytes_recvd);
     }
-
-    // TODO
-    // (Stretch) If POST, handle the post request
+    else {
+        std::cerr << "Method not supported" << std::endl;
+        resp_404(fd);
+    }
 
     return;
 }
@@ -192,11 +196,56 @@ char *Http::find_start_of_body(char *header)
             ++p;
             continue;
         }
-        // we found two newlines in a row → end of headers.
+        // we found two newlines in a row -> end of headers.
         return q + nl2len;
     }
     // no header/body boundary found
     return nullptr;
+}
+
+void Http::post_save(int fd, Cache &cache, const std::string &url, char *request_buf, int bytes_recvd)
+{
+    // locate start of body
+    char *body = find_start_of_body(request_buf);
+    if (!body) {
+        resp_404(fd);
+        return;
+    }
+    int header_len = static_cast<int>(body - request_buf);
+    int body_len   = bytes_recvd - header_len;
+
+    // determine filesystem path
+    std::string path = url;
+    if (!path.empty() && path.front() == '/')
+        path.erase(0,1);
+    std::string full_path = _filepath_root + path;
+
+    // write body to disk
+    int out = open(full_path.c_str(),
+                   O_CREAT | O_WRONLY | O_TRUNC,
+                   0666);
+    if (out < 0) {
+        perror("open");
+        resp_404(fd);
+        return;
+    }
+    ssize_t written = write(out, body, body_len);
+    close(out);
+    if (written < 0 || written != body_len) {
+        perror("write");
+        resp_404(fd);
+        return;
+    }
+
+    (void) cache;
+    // cache.delete(path);
+
+    const std::string ok = "OK";
+    send_response(fd,
+                  "HTTP/1.1 200 OK",
+                  "text/plain",
+                  ok.c_str(),
+                  static_cast<int>(ok.size()));
 }
 
 }

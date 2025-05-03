@@ -54,6 +54,13 @@ void get_d20(int fd);
  */
 char *find_start_of_body(char *header);
 
+/**
+ * Handle a POST request to save the request body as a file.
+ * URL is the “/foo.txt” path; request_buf holds the full HTTP request,
+ * and bytes_recvd is the total bytes read into request_buf.
+ */
+void post_save(int fd, Cache &cache, const std::string &url, char *request_buf, int bytes_recvd);
+
 private:
 
 int _fd;
