@@ -127,43 +127,74 @@ void Http::get_file(int fd, Cache &cache, const std::string& request_path)
 
 void Http::handle_http_request(int fd, Cache &cache)
 {
-    const int request_buffer_size = 65536; // 64K
-    char request[request_buffer_size];
+    constexpr int MAX_REQ = 64*1024;
+    std::vector<char> buf;
+    buf.reserve(4096);
 
-    // Read request
-    int bytes_recvd = recv(fd, request, request_buffer_size - 1, 0);
-
-    if (bytes_recvd < 0) {
-        std::cerr << "recv" << std::endl;
-        return;
-    }
-
-    std::istringstream iss(request);
-
-    std::string method, url, version;
-
-    if (iss >> method >> url >> version) {
-        std::cout << "Parsed values: " << method << ", " << url << ", " << version << std::endl;
-    } else {
-        std::cerr << "Failed to parse input" << std::endl;
-    }
-
-    if (method == "GET")
+    // read header first --
+    while (true) 
     {
-        if (url == "/d20") {
-            get_d20(fd);
-        } else {
-            get_file(fd, cache, url);
-        }
-    } else if (method == "POST") { // Stretch goals 1
-        post_save(fd, cache, url, request, bytes_recvd);
+        char tmp[1024];
+        int n = recv(fd, tmp, sizeof tmp, 0);
+        if (n <= 0) return;        // error or closed
+        buf.insert(buf.end(), tmp, tmp + n);
+
+        // header/body separator?
+        char *p = find_start_of_body(buf.data());
+        if (p) break;              // header is fully in buf
+        if (buf.size() > MAX_REQ)  // sanity cap
+            return resp_404(fd);
+    }
+
+    // split header & find content-length --
+    char *body_start = find_start_of_body(buf.data());
+    int header_len    = static_cast<int>(body_start - buf.data());
+    std::string header(buf.data(), buf.data() + header_len);
+
+    int content_length = 0;
+    {
+      auto pos = header.find("Content-Length:");
+      if (pos != std::string::npos) {
+        pos += strlen("Content-Length:");
+        std::string val = header.substr(pos, header.find("\r\n", pos) - pos);
+        content_length = std::stoi(val);
+      }
+    }
+
+    // read the rest of the body if needed
+    int have_body = static_cast<int>(buf.size()) - header_len;
+    std::cerr << "[HTTP handler] read body length is " << have_body << " bytes:\n";
+    while (have_body < content_length) 
+    {
+        char tmp[1024];
+        int n = recv(fd, tmp, std::min<int>(sizeof tmp, content_length - have_body), 0);
+
+        if (n <= 0) break;
+        buf.insert(buf.end(), tmp, tmp + n);
+        have_body += n;
+    }
+
+    // now buf contains header+full body
+    std::string method, url, version;
+    {
+      std::istringstream iss(std::string(buf.data(), header_len));
+      if (!(iss >> method >> url >> version)) {
+        resp_404(fd);
+        return;
+      }
+    }
+
+    if (method == "GET") {
+      if (url == "/d20") get_d20(fd);
+      else              get_file(fd, cache, url);
+    }
+    else if (method == "POST" || method == "PUT") {
+      // hand off the entire buffer to post_save
+      post_save(fd, cache, url, buf.data(), header_len + content_length);
     }
     else {
-        std::cerr << "Method not supported" << std::endl;
-        resp_404(fd);
+      resp_404(fd);
     }
-
-    return;
 }
 
 char *Http::find_start_of_body(char *header)
@@ -220,6 +251,10 @@ void Http::post_save(int fd, Cache &cache, const std::string &url, char *request
         path.erase(0,1);
     std::string full_path = _filepath_root + path;
 
+    // erase old cache entry
+    std::cout << "[HTTP request handler] erasing old cache entry: " << path << std::endl;
+    cache.erase(path);
+
     // write body to disk
     int out = open(full_path.c_str(),
                    O_CREAT | O_WRONLY | O_TRUNC,
@@ -237,8 +272,13 @@ void Http::post_save(int fd, Cache &cache, const std::string &url, char *request
         return;
     }
 
-    (void) cache;
-    // cache.delete(path);
+    std::string content_type = mime_type_get(path);
+    // add new cache entry
+    std::cout << "[HTTP request handler] adding new cache entry: " << path << std::endl;
+    cache.put(path,
+              content_type,
+              body,
+              body_len);
 
     const std::string ok = "OK";
     send_response(fd,
