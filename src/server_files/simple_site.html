@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>C++ WebServer Demo</title>
+</head>
+<body>
+  <h1>Simple C++ Web Server</h1>
+
+  <form id="saveForm">
+    <label for="textInput">Enter some text to save:</label><br>
+    <input type="text" id="textInput" name="textInput" size="40"><br><br>
+    <button type="submit">Save to server</button>
+  </form>
+
+  <p id="status"></p>
+
+  <h2>Previously saved:</h2>
+  <pre id="savedText">[nothing saved yet]</pre>
+
+  <script>
+  async function fetchSaved() {
+    const resp = await fetch('/input.txt');
+    if (resp.ok) {
+      const text = await resp.text();
+      document.getElementById('savedText').textContent = text;
+    }
+  }
+
+  document.getElementById('saveForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    await fetchSaved();
+    const text = document.getElementById('textInput').value;
+    const resp = await fetch('/input.txt', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'text/plain' },
+      body: text
+    });
+    const status = document.getElementById('status');
+    if (resp.ok) {
+      status.textContent = '✅ Saved!';
+    } else {
+      status.textContent = '❌ Error: ' + resp.status;
+    }
+  });
+
+  </script>
+</body>
+</html>
