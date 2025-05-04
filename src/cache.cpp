@@ -59,5 +59,23 @@ Cache::Entry* Cache::get(const std::string &path) {
     return e;
 }
 
+void Cache::erase(const std::string &path) {
+    // look up the entry pointer
+    auto opt = _index.erase(path);
+    if (!opt.has_value()) {
+        return; 
+    }
+
+    Entry *e = opt.value();
+
+    // remove it from the usage list
+    _nodes.l_delete(
+        e,
+        [](void *a, void *b){ return a == b ? 0 : 1; }
+    );
+
+    delete e;
+}
+
     
 }
