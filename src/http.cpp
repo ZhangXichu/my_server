@@ -77,7 +77,12 @@ void Http::get_file(int fd, Cache &cache, const std::string& request_path)
 {
     std::string path = request_path;
     if (!path.empty() && path.front() == '/')
-        path.erase(0, 1);
+    {
+        path = "index.html";
+    } else {
+        if (path.front() == '/')
+            path.erase(0,1);
+    }
 
     // check cache
     if (auto *entry = cache.get(path)) {
