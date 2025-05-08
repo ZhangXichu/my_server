@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
+#include <thread>
+#include <chrono>
 
 #include "cache.hpp"
 
@@ -57,4 +59,39 @@ TEST(CacheTest, LruEviction) {
     EXPECT_EQ(cache.get("A"), nullptr); // A is already evicted
     EXPECT_NE(cache.get("C"), nullptr); // accesses C
     EXPECT_NE(cache.get("D"), nullptr); // accesses D
+}
+
+TEST(CacheTest, TtlNotExpired) {
+    using namespace std::chrono_literals;
+    // ttl = 200 ms
+    my_server::Cache cache(5, 128, std::chrono::milliseconds{200});
+
+    const std::string path = "foo.txt";
+    const std::string ct   = "text/plain";
+    const char    data[]   = "ABC";
+    cache.put(path, ct, data, sizeof(data) - 1);
+
+    // wait less than ttl
+    std::this_thread::sleep_for(100ms);
+
+    auto *e = cache.get(path);
+    ASSERT_NE(e, nullptr) << "Entry should still be valid before TTL expires";
+    EXPECT_EQ(to_string(e->content), "ABC");
+}
+
+TEST(CacheTest, TtlExpired) {
+    using namespace std::chrono_literals;
+    // ttl = 50 ms
+    my_server::Cache cache(5, 128, std::chrono::milliseconds{50});
+
+    const std::string path = "bar.txt";
+    const std::string ct   = "text/plain";
+    const char    data[]   = "XYZ";
+    cache.put(path, ct, data, sizeof(data) - 1);
+
+    // wait longer than TTL
+    std::this_thread::sleep_for(100ms);
+
+    auto *e = cache.get(path);
+    EXPECT_EQ(e, nullptr) << "Entry should be expired after TTL";
 }

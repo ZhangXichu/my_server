@@ -1,10 +1,12 @@
 #include "cache.hpp"
 
+#include <chrono>
+
 namespace my_server {
 
 void Cache::put(const std::string &path, const std::string &content_type, const void *data, std::size_t data_length)
 {
-    auto *e = new Entry{ path, content_type, {} };
+    auto *e = new Entry{ path, content_type, {}, std::chrono::steady_clock::now()};
     e->content.resize(data_length);
     std::memcpy(e->content.data(), data, data_length);
 
@@ -46,6 +48,23 @@ Cache::Entry* Cache::get(const std::string &path) {
         return nullptr;
     }
     Entry* e = opt.value();
+
+    auto now = std::chrono::steady_clock::now();
+
+    if (now - e->created_at > _ttl) {
+        // remove from list and map
+        _nodes.l_delete(
+            e,
+            [](void *a, void *b){ return a == b ? 0 : 1; }
+        );
+        auto opt = _index.erase(path);
+        if (opt.has_value()) {
+            Entry *removed = opt.value();
+            // free the cache entry
+            delete removed;
+        }
+        return nullptr;  // Http::get_file() will treat this as cache miss
+    }
 
     // move this entry to the head of the LRU list
     // remove and re-insert at front.

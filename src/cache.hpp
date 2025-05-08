@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 #include <optional>
+#include <chrono>
 
 #include "hashtable.hpp"
 
@@ -17,10 +18,12 @@ struct Entry {
     std::string path;
     std::string content_type;
     std::vector<std::byte> content;
+    std::chrono::steady_clock::time_point created_at;
 };
 
-Cache(std::size_t max_size, int hashsize)
+Cache(std::size_t max_size, int hashsize, std::chrono::steady_clock::duration ttl = std::chrono::seconds{300})
       : _max_size(max_size), _index(hashsize)
+      , _ttl(ttl)
     {}
 
 ~Cache() {
@@ -60,6 +63,7 @@ private:
 std::size_t _max_size;
 Llist _nodes; // holds Entry* in MRU->LRU order
 HashTable<std::string, Entry*> _index; // map path -> Entry*
+std::chrono::steady_clock::duration _ttl; // time to live
 
 
 };
