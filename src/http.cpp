@@ -75,57 +75,49 @@ void Http::resp_404(int fd)
 // Part 2 Task 3
 void Http::get_file(int fd, Cache &cache, const std::string& request_path)
 {
+    // normalize “/” -> “index.html”, strip leading “/” otherwise
+    std::cout << "[Http get_file] request path: " << request_path << std::endl;
+
     std::string path = request_path;
-    if (!path.empty() && path.front() == '/')
-    {
+    if (path.empty() || path == "/") {
         path = "index.html";
-    } else {
-        if (path.front() == '/')
-            path.erase(0,1);
+    }
+    else if (path.front() == '/') {
+        path.erase(0,1);
     }
 
-    // check cache
-    if (auto *entry = cache.get(path)) {
-        // cache hit
-        std::cout << "[CACHE HIT]  " << path << "\n";
+    std::cout << "[Http get_file] normalized path: " << path << std::endl;
 
-        send_response(
-            fd,
-            "HTTP/1.1 200 OK",
-            entry->content_type,
-            entry->content.data(),
-            static_cast<int>(entry->content.size())
-        );
+    // check the cache under this normalized key
+    if (auto *entry = cache.get(path)) {
+        std::cout << "[CACHE HIT]  " << path << "\n";
+        send_response(fd,
+                      "HTTP/1.1 200 OK",
+                      entry->content_type,
+                      entry->content.data(),
+                      static_cast<int>(entry->content.size()));
         return;
     }
 
-    // cache miss
     std::cout << "[CACHE MISS] " << path << "\n";
 
+    // build the true filesystem path
+    std::string full = _filepath_root + path;
     try {
-        File file(_filepath_root + request_path);
+        File file(full);                          // throws if not found/readable
+        std::string mime = mime_type_get(path);   // lookup by “path” too
 
-        std::string content_type = mime_type_get(request_path);
+        cache.put(path, mime, file.data().data(), file.size());
 
-        // add to cache
-        cache.put(
-            path,
-            content_type,
-            file.data().data(),
-            file.size()
-        );
-
-        send_response(
-            fd,
-            "HTTP/1.1 200 OK",
-            content_type,
-            file.data().data(),
-            static_cast<int>(file.size())
-        );
-    } 
+        send_response(fd,
+                      "HTTP/1.1 200 OK",
+                      mime,
+                      file.data().data(),
+                      static_cast<int>(file.size()));
+    }
     catch (const std::runtime_error &e) {
-        std::cerr << "Error loading file: " << e.what() << std::endl;
-        resp_404(fd);
+        std::cerr << "Error loading file '" << full << "': " << e.what() << "\n";
+        resp_404(fd); 
     }
 }
 
