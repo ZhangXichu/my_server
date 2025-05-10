@@ -24,6 +24,7 @@ add_library(libserver OBJECT
     src/mime.cpp
     src/llist.cpp
     src/cache.cpp
+    src/thread_pool.cpp
 )
 
 
