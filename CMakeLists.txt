@@ -25,8 +25,11 @@ add_library(libserver OBJECT
     src/llist.cpp
     src/cache.cpp
     src/thread_pool.cpp
+    src/server_ws_http.cpp
 )
 
+find_package(Boost 1.66 REQUIRED COMPONENTS system thread)
+find_package(OpenSSL REQUIRED)
 
 add_executable(server 
     src/server.cpp
@@ -53,6 +56,19 @@ target_include_directories(
 target_link_libraries(
     tests
   GTest::gtest_main
+  OpenSSL::Crypto      
+)
+
+target_link_libraries(libserver
+    PUBLIC
+    OpenSSL::Crypto
+    OpenSSL::SSL
+)
+
+target_link_libraries(server
+  PRIVATE Boost::system Boost::thread
+  OpenSSL::SSL
+  OpenSSL::Crypto
 )
 
 include(GoogleTest)

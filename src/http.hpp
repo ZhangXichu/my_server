@@ -26,7 +26,7 @@ int send_response(int fd, const std::string &header, const std::string &content_
 /**
  * Handle HTTP request and send response
  */
-void handle_http_request(int fd, Cache &cache);
+void handle_http_request(int fd, Cache &cache, const std::string* raw_data);
 
 /**
  * Read and return a file from disk or cache

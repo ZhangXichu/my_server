@@ -122,75 +122,172 @@ void Http::get_file(int fd, Cache &cache, const std::string& request_path)
 }
 
 
-void Http::handle_http_request(int fd, Cache &cache)
+// void Http::handle_http_request(int fd, Cache &cache)
+// {
+//     std::cout << "Http handler called." << std::endl;
+
+//     constexpr int MAX_REQ = 64*1024;
+//     std::vector<char> buf;
+//     buf.reserve(4096);
+
+//     // read header first --
+//     while (true) 
+//     {
+//         char tmp[1024];
+//         int n = recv(fd, tmp, sizeof tmp, 0);
+
+//         std::cerr << "[recv] got " << n << " bytes:\n";
+
+//         if (n <= 0) return;        // error or closed
+//         buf.insert(buf.end(), tmp, tmp + n);
+
+//         std::cerr << "[recv] got " << n << " bytes:\n";
+//         std::cerr << std::string(tmp, n) << std::endl;
+
+//         // header/body separator?
+//         char *p = find_start_of_body(buf.data());
+//         if (p) break;              // header is fully in buf
+//         if (buf.size() > MAX_REQ)  // sanity cap
+//             return resp_404(fd);
+//     }
+
+//     // split header & find content-length --
+//     char *body_start = find_start_of_body(buf.data());
+//     int header_len    = static_cast<int>(body_start - buf.data());
+//     std::string header(buf.data(), buf.data() + header_len);
+
+//     int content_length = 0;
+//     {
+//       auto pos = header.find("Content-Length:");
+//       if (pos != std::string::npos) {
+//         pos += strlen("Content-Length:");
+//         std::string val = header.substr(pos, header.find("\r\n", pos) - pos);
+//         content_length = std::stoi(val);
+//       }
+//     }
+
+//     // read the rest of the body if needed
+//     int have_body = static_cast<int>(buf.size()) - header_len;
+//     std::cerr << "[HTTP handler] read body length is " << have_body << " bytes:\n";
+//     while (have_body < content_length) 
+//     {
+//         char tmp[1024];
+//         int n = recv(fd, tmp, std::min<int>(sizeof tmp, content_length - have_body), 0);
+
+//         std::cerr << "[recv] got " << n << " bytes:\n";
+//         std::cerr << std::string(tmp, n) << std::endl;
+
+//         if (n <= 0) break;
+//         buf.insert(buf.end(), tmp, tmp + n);
+//         have_body += n;
+//     }
+
+//     // now buf contains header+full body
+//     std::string method, url, version;
+//     {
+//       std::istringstream iss(std::string(buf.data(), header_len));
+//       if (!(iss >> method >> url >> version)) {
+//         resp_404(fd);
+//         return;
+//       }
+//     }
+
+//     if (method == "GET") {
+//       if (url == "/d20") get_d20(fd);
+//       else              get_file(fd, cache, url);
+//     }
+//     else if (method == "POST" || method == "PUT") {
+//       // hand off the entire buffer to post_save
+//       post_save(fd, cache, url, buf.data(), header_len + content_length);
+//     }
+//     else {
+//       resp_404(fd);
+//     }
+// }
+
+void Http::handle_http_request(int fd, Cache& cache, const std::string* raw_data)
 {
-    constexpr int MAX_REQ = 64*1024;
+    std::cout << "Http handler called." << std::endl;
+
+    constexpr int MAX_REQ = 64 * 1024;
     std::vector<char> buf;
     buf.reserve(4096);
 
-    // read header first --
-    while (true) 
-    {
-        char tmp[1024];
-        int n = recv(fd, tmp, sizeof tmp, 0);
-        if (n <= 0) return;        // error or closed
-        buf.insert(buf.end(), tmp, tmp + n);
+    if (raw_data) {
+        // Use raw input string instead of reading from fd
+        buf.insert(buf.end(), raw_data->begin(), raw_data->end());
+    } else {
+        // read header first --
+        while (true) 
+        {
+            char tmp[1024];
+            int n = recv(fd, tmp, sizeof tmp, 0);
+            std::cerr << "[recv] got " << n << " bytes:\n";
 
-        // header/body separator?
-        char *p = find_start_of_body(buf.data());
-        if (p) break;              // header is fully in buf
-        if (buf.size() > MAX_REQ)  // sanity cap
-            return resp_404(fd);
+            if (n <= 0) return;
+            buf.insert(buf.end(), tmp, tmp + n);
+
+            std::cerr << std::string(tmp, n) << std::endl;
+
+            char* p = find_start_of_body(buf.data());
+            if (p) break;
+            if (buf.size() > MAX_REQ)
+                return resp_404(fd);
+        }
     }
 
     // split header & find content-length --
-    char *body_start = find_start_of_body(buf.data());
-    int header_len    = static_cast<int>(body_start - buf.data());
+    char* body_start = find_start_of_body(buf.data());
+    if (!body_start)
+        return resp_404(fd);
+    int header_len = static_cast<int>(body_start - buf.data());
     std::string header(buf.data(), buf.data() + header_len);
 
     int content_length = 0;
     {
-      auto pos = header.find("Content-Length:");
-      if (pos != std::string::npos) {
-        pos += strlen("Content-Length:");
-        std::string val = header.substr(pos, header.find("\r\n", pos) - pos);
-        content_length = std::stoi(val);
-      }
+        auto pos = header.find("Content-Length:");
+        if (pos != std::string::npos) {
+            pos += strlen("Content-Length:");
+            std::string val = header.substr(pos, header.find("\r\n", pos) - pos);
+            content_length = std::stoi(val);
+        }
     }
 
-    // read the rest of the body if needed
     int have_body = static_cast<int>(buf.size()) - header_len;
     std::cerr << "[HTTP handler] read body length is " << have_body << " bytes:\n";
-    while (have_body < content_length) 
-    {
-        char tmp[1024];
-        int n = recv(fd, tmp, std::min<int>(sizeof tmp, content_length - have_body), 0);
 
-        if (n <= 0) break;
-        buf.insert(buf.end(), tmp, tmp + n);
-        have_body += n;
+    if (!raw_data) {
+        while (have_body < content_length) {
+            char tmp[1024];
+            int n = recv(fd, tmp, std::min<int>(sizeof tmp, content_length - have_body), 0);
+            std::cerr << "[recv] got " << n << " bytes:\n";
+            std::cerr << std::string(tmp, n) << std::endl;
+
+            if (n <= 0) break;
+            buf.insert(buf.end(), tmp, tmp + n);
+            have_body += n;
+        }
     }
 
-    // now buf contains header+full body
+    // now buf contains header + full body
     std::string method, url, version;
     {
-      std::istringstream iss(std::string(buf.data(), header_len));
-      if (!(iss >> method >> url >> version)) {
-        resp_404(fd);
-        return;
-      }
+        std::istringstream iss(std::string(buf.data(), header_len));
+        if (!(iss >> method >> url >> version)) {
+            resp_404(fd);
+            return;
+        }
     }
 
     if (method == "GET") {
-      if (url == "/d20") get_d20(fd);
-      else              get_file(fd, cache, url);
+        if (url == "/d20") get_d20(fd);
+        else               get_file(fd, cache, url);
     }
     else if (method == "POST" || method == "PUT") {
-      // hand off the entire buffer to post_save
-      post_save(fd, cache, url, buf.data(), header_len + content_length);
+        post_save(fd, cache, url, buf.data(), header_len + content_length);
     }
     else {
-      resp_404(fd);
+        resp_404(fd);
     }
 }
 
