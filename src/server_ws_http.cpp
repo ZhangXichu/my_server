@@ -7,72 +7,54 @@ static std::atomic<bool> keep_running{true};
 static void signal_handler(int) { keep_running = false; }
     
 /**
- * Read just the HTTP headers to decide if this is a WS upgrade.
+ * Read http request and decide if this is a WS upgrade.
  * If so, run websocker server.
  * Otherwise, serialize headers+body back into raw bytes and call
  * Http::handle_http_request().
  */
 static void handle_one(boost::asio::ip::tcp::socket socket, Cache &cache, ThreadPool &pool, Http &http)
 {
-    boost::beast::flat_buffer buffer;
+    namespace beast = boost::beast;
+    namespace ws    = beast::websocket;
 
-    // read header only
-    boost::beast::http::request_parser<boost::beast::http::string_body> parser;
-    boost::beast::http::read_header(socket, buffer, parser);
-    auto req = parser.get(); 
+    beast::flat_buffer buffer;
 
-    {
-        // Dump the beast::http::request to stdout
-        std::ostringstream req_stream;
-        req_stream << req;
-        std::cout 
-          << "————— Parsed HTTP Request —————\n"
-          << req_stream.str()
-          << "——————————————————————————————\n";
-    }
+    // read the *entire* HTTP request (headers + body)
+    beast::http::request<beast::http::string_body> req;
+    beast::http::read(socket, buffer, req);
 
     // detect WebSocket upgrade
-    if(boost::beast::websocket::is_upgrade(req)) {
-        boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws{std::move(socket)};
-        ws.accept(req);
+    if(ws::is_upgrade(req)) {
+        ws::stream<boost::asio::ip::tcp::socket> wsock{std::move(socket)};
+        wsock.accept(req);
 
         // TODO: replace with chatroom
         for(;;) {
             boost::beast::flat_buffer msg;
-            ws.read(msg);
-            ws.text(ws.got_text());
-            ws.write(msg.data());
+            wsock.read(msg);
+            wsock.text(wsock.got_text());
+            wsock.write(msg.data());
         }
-
-        return;
     }
 
     // otherwise re-serialize header+any body bytes
-    std::string raw = std::string{req.method_string()} + " " +
-                        std::string{req.target()} + " HTTP/" +
-                        std::to_string(req.version()/10) + "." +
-                        std::to_string(req.version()%10) + "\r\n";
-    for(auto const& field : req) {
-        raw += std::string{ field.name_string() } + ": " +
-            std::string{ field.value() } + "\r\n";
-    }
-    raw += "\r\n";
-    if(! req.body().empty()) raw += req.body();
+    std::ostringstream oss;
+    oss << req;                  // writes request-line + headers + "\r\n"
+    oss << "\r\n";               // ensure blank line
+    std::string raw = oss.str();
+
+    // push those bytes back so your recv() in Http sees them
+    int orig_fd = socket.native_handle();
+    int fd = dup(orig_fd);
 
     std::cout 
         << "————— Raw Re-serialized Request —————\n"
         << raw 
         << "\n——————————————————————————————\n";
 
-    // push those bytes back so your recv() in Http sees them
-    int orig_fd = socket.native_handle();
-    int fd = dup(orig_fd);
-    // send(fd, raw.data(), raw.size(), MSG_PEEK);
-
-    // handle as before, on the thread pool
-    pool.enqueue([fd, raw, &cache, &http](){
+    pool.enqueue([fd, raw = std::move(raw), &cache, &http]() mutable {
         http.handle_http_request(fd, cache, &raw);
-        close(fd);
+        ::close(fd);
     });
 }
     

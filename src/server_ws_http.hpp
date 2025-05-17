@@ -21,7 +21,7 @@ namespace my_server {
  * Serve both plain HTTP and WebSocket upgrade requests on the same port.
  * This function blocks until the server is shut down (e.g. via SIGINT).
  * 
- * @param port         TCP port to listen on (e.g. 3496)
+ * @param port         TCP port to listen on
  * @param num_threads  how many worker threads to spawn
  * @param cache_size   max entries in the LRU cache
  * @param hash_buckets buckets for the cache’s hashtable
