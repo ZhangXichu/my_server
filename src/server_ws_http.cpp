@@ -43,16 +43,15 @@ static void handle_one(boost::asio::ip::tcp::socket socket, Cache &cache, Thread
     oss << "\r\n";               // ensure blank line
     std::string raw = oss.str();
 
-    // push those bytes back so your recv() in Http sees them
-    int orig_fd = socket.native_handle();
-    int fd = dup(orig_fd);
-
     std::cout 
         << "————— Raw Re-serialized Request —————\n"
         << raw 
         << "\n——————————————————————————————\n";
 
-    pool.enqueue([fd, raw = std::move(raw), &cache, &http]() mutable {
+    auto sock_ptr = std::make_shared<boost::asio::ip::tcp::socket>(std::move(socket));
+
+    pool.enqueue([sock_ptr, raw = std::move(raw), &cache, &http]() mutable {
+        int fd = sock_ptr->native_handle();
         http.handle_http_request(fd, cache, &raw);
         ::close(fd);
     });
