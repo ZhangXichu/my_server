@@ -6,6 +6,8 @@ namespace my_server {
 
 void Cache::put(const std::string &path, const std::string &content_type, const void *data, std::size_t data_length)
 {
+    std::lock_guard lock(_mtx);
+
     auto *e = new Entry{ path, content_type, {}, std::chrono::steady_clock::now()};
     e->content.resize(data_length);
     std::memcpy(e->content.data(), data, data_length);
@@ -42,6 +44,8 @@ void Cache::put(const std::string &path, const std::string &content_type, const 
 }
 
 Cache::Entry* Cache::get(const std::string &path) {
+    std::lock_guard lock(_mtx);
+
     // lookup in the hash table
     auto opt = _index.get(path);
     if (!opt.has_value()) {
@@ -79,6 +83,8 @@ Cache::Entry* Cache::get(const std::string &path) {
 }
 
 void Cache::erase(const std::string &path) {
+    std::lock_guard lock(_mtx);
+    
     // look up the entry pointer
     auto opt = _index.erase(path);
     if (!opt.has_value()) {

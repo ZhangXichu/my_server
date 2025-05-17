@@ -4,6 +4,7 @@
 #include <string>
 #include <optional>
 #include <chrono>
+#include <mutex>
 
 #include "hashtable.hpp"
 
@@ -64,7 +65,7 @@ std::size_t _max_size;
 Llist _nodes; // holds Entry* in MRU->LRU order
 HashTable<std::string, Entry*> _index; // map path -> Entry*
 std::chrono::steady_clock::duration _ttl; // time to live
-
+std::mutex _mtx;
 
 };
 
