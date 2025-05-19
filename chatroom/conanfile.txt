@@ -1,0 +1,7 @@
+[requires]
+uwebsockets/20.70.0
+[generators]
+CMakeDeps
+CMakeToolchain
+[layout]
+cmake_layout
