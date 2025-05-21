@@ -14,7 +14,7 @@ int main()
 {
     int ws_port = 8080;
     std::string html_content;
-    std::string file_path = "/home/xichuz/workspace/chat/index.html";
+    std::string file_path = "/home/xichuz/workspace/my_server/chatroom/index.html";
     try {
         std::ifstream file(file_path);
         if (!file.is_open()) {
