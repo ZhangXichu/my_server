@@ -64,7 +64,7 @@ void post_save(int fd, Cache &cache, const std::string &url, char *request_buf, 
 private:
 
 int _fd;
-std::string _filepath_root = "../src/server_files/";
+std::string _filepath_root = "/home/xichuz/workspace/my_server/server_files/"; // TODO: make this configurable
 
 };
 
