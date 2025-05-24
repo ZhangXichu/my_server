@@ -4,6 +4,8 @@
 
 #include <uWebSockets/App.h>
 
+// TODO: chat history 
+
 std::mutex ws_mtx;
 uWS::App *global_app;
 // empty custom user data for each WebSocket connection
@@ -14,7 +16,8 @@ int main()
 {
     int ws_port = 8080;
     std::string html_content;
-    std::string file_path = "/home/xichuz/workspace/my_server/chatroom/index.html";
+    // TODO: make this path configurable
+    std::string file_path = "/home/xichuz/workspace/my_server/server_files/chatroom.html";
     try {
         std::ifstream file(file_path);
         if (!file.is_open()) {
@@ -36,7 +39,7 @@ int main()
     app.get("/", [&html_content](auto *res, auto * /*req*/) {
             res->writeHeader("Content-Type", "text/html")->end(html_content);
         })
-        .ws<struct PerSocketData>("/",{
+        .ws<struct PerSocketData>("/*",{
         .compression = uWS::SHARED_COMPRESSOR,
         .maxPayloadLength = 16 * 1024,
         .idleTimeout = 10,
