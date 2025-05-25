@@ -5,16 +5,22 @@ Based on [C-Web-Server](https://github.com/bloominstituteoftechnology/C-Web-Serv
 
 ## build this project
 
-In folder `build/`
-
-run 
+in project root firstly start and activate the Python virtual environment:
 
 ```
-cmake ..
-make
+./setup_venv.sh
+source .venv/bin/activate
 ```
 
-and use 
+then install the dependencies in the project root:
+
+```
+conan install . --output-folder=build --build=missing
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+```
+
+In folder `build/` run `make` and then use
 ```
 ./server
 ```
@@ -22,7 +28,7 @@ to run the server and use
 ```
 ./tests
 ```
-to run the tests.
+for the tests.
 
 
 ## build chatroom

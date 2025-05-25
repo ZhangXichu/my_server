@@ -28,7 +28,7 @@ add_library(libserver OBJECT
     src/server_ws_http.cpp
 )
 
-find_package(Boost 1.66 REQUIRED COMPONENTS system thread)
+find_package(Boost 1.87 REQUIRED COMPONENTS system thread)
 find_package(OpenSSL REQUIRED)
 
 add_executable(server 
