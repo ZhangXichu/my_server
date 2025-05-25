@@ -79,12 +79,19 @@ void Http::get_file(int fd, Cache &cache, const std::string& request_path)
     std::cout << "[Http get_file] request path: " << request_path << std::endl;
 
     std::string path = request_path;
-    if (path.empty() || path == "/") {
-        path = "index.html";
-    }
-    else if (path.front() == '/') {
+    std::cout << "[http get_file] no sufficx? " << (path.find('.') == std::string::npos) << std::endl;
+    
+    // copy and strip leading slash once
+    if (!path.empty() && path.front() == '/')
         path.erase(0,1);
-    }
+
+    // if it’s now empty, serve the index
+    if (path.empty())
+        path = "index.html";
+
+   // if there’s no extension, assume .html
+    if (path.find('.') == std::string::npos)
+        path += ".html";
 
     std::cout << "[Http get_file] normalized path: " << path << std::endl;
 

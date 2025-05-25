@@ -1,5 +1,6 @@
 
 #include "server_ws_http.hpp"
+#include "config.hpp"
 
 namespace my_server {
 
@@ -26,7 +27,7 @@ static void proxy_websocket(boost::asio::ip::tcp::socket client,
     // 2) Do the upstream handshake
     server_ws.handshake(host, target);
 
-    // 3) Thread #1: read from client → write to server
+    // 3) Thread #1: read from client -> write to server
     std::thread t([&]()
     {
         boost::system::error_code ec;
@@ -34,7 +35,7 @@ static void proxy_websocket(boost::asio::ip::tcp::socket client,
             beast::flat_buffer msg;
             client_ws.read(msg, ec);
             if (ec) {
-                std::cerr << "[proxy] client→server read error: " << ec.message() << "\n";
+                std::cerr << "[proxy] client -> server read error: " << ec.message() << "\n";
                 break;
             }
             server_ws.text(client_ws.got_text());
@@ -58,7 +59,7 @@ static void proxy_websocket(boost::asio::ip::tcp::socket client,
             beast::flat_buffer msg;
             server_ws.read(msg, ec);
             if (ec) {
-                std::cerr << "[proxy] server→client read error: " << ec.message() << "\n";
+                std::cerr << "[proxy] server -> client read error: " << ec.message() << "\n";
                 break;
             }
             client_ws.text(server_ws.got_text());
@@ -74,7 +75,7 @@ static void proxy_websocket(boost::asio::ip::tcp::socket client,
         }
     }
 
-    // 5) Clean up
+    // clean up
     t.join();
     beast::error_code ec;
     client_ws.close(ws::close_code::normal, ec);
@@ -87,7 +88,10 @@ static void proxy_websocket(boost::asio::ip::tcp::socket client,
  * Otherwise, serialize headers+body back into raw bytes and call
  * Http::handle_http_request().
  */
-static void handle_one(boost::asio::ip::tcp::socket socket, Cache &cache, ThreadPool &pool, Http &http)
+static void handle_one(boost::asio::ip::tcp::socket socket, Cache &cache, 
+    ThreadPool &pool, 
+    Http &http,
+    const std::vector<ProxyTarget>& proxy_targets)
 {
     namespace beast = boost::beast;
     namespace ws    = beast::websocket;
@@ -102,25 +106,28 @@ static void handle_one(boost::asio::ip::tcp::socket socket, Cache &cache, Thread
     std::string host{ req[beast::http::field::host] };
     std::string path{ req.target() };
     
-
     std::cout << "[DEBUG] incoming path: " << path << std::endl;
 
     // detect WebSocket upgrade
-    if(ws::is_upgrade(req) && path.rfind("/chatroom", 0) == 0) 
-    {
-        tcp::socket upstream{socket.get_executor()};
-        upstream.connect({{}, 8080});
+    for (auto const &pt : proxy_targets) {
+        if(ws::is_upgrade(req) && path.rfind(pt.route, 0) == 0) 
+        {
+            tcp::socket upstream{socket.get_executor()};
+            upstream.connect({
+                boost::asio::ip::make_address(pt.host), 
+                pt.port
+            });
 
-        // b) Hand off both sockets + host/target into the proxy helper
-        proxy_websocket(
-            std::move(socket),
-            std::move(upstream),
-            std::move(host),
-            std::move(path),
-            req
-        );
-
-        return;
+            // b) Hand off both sockets + host/target into the proxy helper
+            proxy_websocket(
+                std::move(socket),
+                std::move(upstream),
+                std::move(host),
+                std::move(path),
+                req
+            );
+            return;
+        }
     }
 
     // otherwise re-serialize header+any body bytes
@@ -174,6 +181,9 @@ void run_ws_http_server(int port,
     boost::asio::ip::tcp::acceptor acceptor(ioc, endpoint);
     std::cout << "Listening on port " << port << " (HTTP + WS upgrade)\n";
 
+    // TODO: make this path configurable
+    const std::vector<ProxyTarget> proxy_targets = load_proxy_targets("/home/xichuz/workspace/my_server/configs/app.conf");
+
     while (keep_running) {
         boost::system::error_code ec;
         boost::asio::ip::tcp::socket socket{ioc};
@@ -188,7 +198,8 @@ void run_ws_http_server(int port,
                     std::move(socket),
                     std::ref(cache),
                     std::ref(pool),
-                    std::ref(http))
+                    std::ref(http),
+                    proxy_targets)
             .detach();
     }
 
