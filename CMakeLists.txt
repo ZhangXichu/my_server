@@ -26,6 +26,7 @@ add_library(libserver OBJECT
     src/cache.cpp
     src/thread_pool.cpp
     src/server_ws_http.cpp
+    src/config.cpp
 )
 
 find_package(Boost 1.87 REQUIRED COMPONENTS system thread)
@@ -44,6 +45,7 @@ add_executable(
     tests/test_hashtable.cpp
     tests/test_cache.cpp
     tests/test_http.cpp
+    tests/test_config_parse.cpp
     $<TARGET_OBJECTS:libserver>
 )
 
