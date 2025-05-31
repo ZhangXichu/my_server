@@ -26,7 +26,6 @@ add_library(libserver OBJECT
     src/cache.cpp
     src/thread_pool.cpp
     src/server_ws_http.cpp
-    src/config.cpp
 )
 
 find_package(Boost 1.87 REQUIRED COMPONENTS system thread)
@@ -61,11 +60,15 @@ target_link_libraries(
   OpenSSL::Crypto      
 )
 
+target_include_directories(tests PRIVATE ${Boost_INCLUDE_DIRS})
+
 target_link_libraries(libserver
     PUBLIC
     OpenSSL::Crypto
     OpenSSL::SSL
 )
+
+target_include_directories(libserver PRIVATE ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(server
   PRIVATE Boost::system Boost::thread
