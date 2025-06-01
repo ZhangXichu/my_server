@@ -20,7 +20,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 add_library(libserver OBJECT
-    src/net.cpp
     src/http.cpp
     src/file.cpp
     src/mime.cpp
