@@ -25,7 +25,7 @@
         ws.onmessage = (event) => {
             const chat = document.getElementById("chat");
             const msg = document.createElement("div");
-            msg.textContent = event.data;
+            msg.innerHTML = event.data;
             chat.appendChild(msg);
         };
 

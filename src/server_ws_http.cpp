@@ -6,6 +6,15 @@ namespace my_server {
 static std::atomic<bool> keep_running{true};
 static void signal_handler(int) { keep_running = false; }
 
+std::string generate_random_color() {
+    static const char* hex_digits = "0123456789ABCDEF";
+    std::string color = "#";
+    for (int i = 0; i < 6; ++i) {
+        color += hex_digits[rand() % 16];
+    }
+    return color;
+}
+
 static void proxy_websocket(boost::asio::ip::tcp::socket client, 
     boost::asio::ip::tcp::socket upstream,
     std::string host,
@@ -26,10 +35,21 @@ static void proxy_websocket(boost::asio::ip::tcp::socket client,
     // 2) Do the upstream handshake
     server_ws.handshake(host, target);
 
+    std::unordered_map<int, std::string> client_colors;
+
     // 3) Thread #1: read from client -> write to server
     std::thread t([&]()
     {
         boost::system::error_code ec;
+
+        int client_id = client_ws.next_layer().native_handle();
+
+        std::cout << "client_id: " << client_id << std::endl;
+
+        if (!client_colors.count(client_id)) {
+            client_colors[client_id] = generate_random_color();
+        }
+
         while (!ec) {
             beast::flat_buffer msg;
             client_ws.read(msg, ec);
@@ -37,11 +57,17 @@ static void proxy_websocket(boost::asio::ip::tcp::socket client,
                 std::cerr << "[proxy] client -> server read error: " << ec.message() << "\n";
                 break;
             }
-            server_ws.text(client_ws.got_text());
-            server_ws.write(msg.data(), ec);
-
+            
             std::string payload = beast::buffers_to_string(msg.data());
+
             std::cout << "[client -> server] " << payload << std::endl;
+
+            std::string colorized_payload =
+                "<span style=\"color: " + client_colors[client_id] + "\">" +
+                payload + "</span>";
+
+            server_ws.text(client_ws.got_text());
+            server_ws.write(boost::asio::buffer(colorized_payload), ec);
 
             if (ec) {
                 std::cerr << "[proxy] server write error: " << ec.message() << "\n";
