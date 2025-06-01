@@ -10,6 +10,9 @@
 
 namespace my_server {
 
+Http::Http(std::string server_files_root)
+    : _server_files_root(std::move(server_files_root)) {}
+
 // Part 1 Task 1
 int Http::send_response(int fd, const std::string &header, const std::string &content_type, const void *body, int content_length)
 {
@@ -109,7 +112,7 @@ void Http::get_file(int fd, Cache &cache, const std::string& request_path)
     std::cout << "[CACHE MISS] " << path << "\n";
 
     // build the true filesystem path
-    std::string full = _filepath_root + path;
+    std::string full = _server_files_root + path;
     try {
         File file(full);                          // throws if not found/readable
         std::string mime = mime_type_get(path);   // lookup by “path” too
@@ -225,7 +228,7 @@ void Http::post_save(int fd, Cache &cache, const std::string &url, char *request
     std::string path = url;
     if (!path.empty() && path.front() == '/')
         path.erase(0,1);
-    std::string full_path = _filepath_root + path;
+    std::string full_path = _server_files_root + path;
 
     // erase old cache entry
     std::cout << "[HTTP request handler] erasing old cache entry: " << path << std::endl;

@@ -1,6 +1,5 @@
 
 #include "server_ws_http.hpp"
-#include "config.hpp"
 
 namespace my_server {
 
@@ -156,10 +155,12 @@ static void handle_one(boost::asio::ip::tcp::socket socket, Cache &cache,
  * socket to handle_one().
  */
 void run_ws_http_server(int port,
-                                    std::size_t num_threads,
-                                    std::size_t cache_size,
-                                    int hash_buckets,
-                                    int ttl_seconds)
+                        std::size_t num_threads,
+                        std::size_t cache_size,
+                        int hash_buckets,
+                        int ttl_second,
+                        std::string server_files_root,
+                        std::string app_config_filepath)
 {
     struct sigaction sa;
     sa.sa_handler = signal_handler;
@@ -167,9 +168,9 @@ void run_ws_http_server(int port,
     sa.sa_flags = 0;
     sigaction(SIGINT, &sa, nullptr);
 
-    Cache cache(cache_size, hash_buckets, std::chrono::seconds{ttl_seconds});
+    Cache cache(cache_size, hash_buckets, std::chrono::seconds{ttl_second});
     ThreadPool pool(num_threads);
-    Http http;
+    Http http(server_files_root);
 
     boost::asio::io_context ioc{1};
     unsigned short port_us = static_cast<unsigned short>(port);
@@ -181,8 +182,7 @@ void run_ws_http_server(int port,
     boost::asio::ip::tcp::acceptor acceptor(ioc, endpoint);
     std::cout << "Listening on port " << port << " (HTTP + WS upgrade)\n";
 
-    // TODO: make this path configurable
-    const std::vector<ProxyTarget> proxy_targets = load_proxy_targets("/home/xichuz/workspace/my_server/configs/app.conf");
+    auto proxy_targets = load_config<ProxyTarget>(app_config_filepath);
 
     while (keep_running) {
         boost::system::error_code ec;

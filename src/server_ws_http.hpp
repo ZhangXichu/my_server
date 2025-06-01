@@ -14,6 +14,7 @@
 #include "cache.hpp"
 #include "thread_pool.hpp"
 #include "http.hpp"
+#include "config.hpp"
 
 namespace my_server {
 
@@ -31,7 +32,9 @@ void run_ws_http_server(int port,
     std::size_t num_threads,
     std::size_t cache_size,
     int hash_buckets,
-    int ttl_seconds);
+    int ttl_seconds,
+    std::string server_files_root,
+    std::string app_config_filepath);
 
 }
 

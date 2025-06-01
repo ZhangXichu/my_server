@@ -17,18 +17,18 @@ TEST(ConfigTest, ParsesMultipleSections)
         route = /stream
         host   = example.com
         port   = 9000
-        )";
+    )";
     ofs.close();
 
-    auto v = my_server::load_proxy_targets(fname);
+    auto v = my_server::load_config<my_server::ProxyTarget>(fname);
 
     ASSERT_EQ(v.size(), 2u);
 
     EXPECT_EQ(v[0].route, "/chat");
-    EXPECT_EQ(v[0].host,   "127.0.0.1");
-    EXPECT_EQ(v[0].port,   8080u);
+    EXPECT_EQ(v[0].host,  "127.0.0.1");
+    EXPECT_EQ(v[0].port,  8080u);
 
     EXPECT_EQ(v[1].route, "/stream");
-    EXPECT_EQ(v[1].host,   "example.com");
-    EXPECT_EQ(v[1].port,   9000u);
+    EXPECT_EQ(v[1].host,  "example.com");
+    EXPECT_EQ(v[1].port,  9000u);
 }

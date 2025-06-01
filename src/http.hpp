@@ -1,3 +1,9 @@
+/**
+ * @file http.hpp
+ * @brief http requests handling
+ * 
+ */
+
 #ifndef HTTP_H
 #define HTTP_H
 
@@ -11,6 +17,8 @@ namespace my_server {
 class Http {
 
 public:
+
+explicit Http(std::string server_files_root);
 
 /**
  * Send an HTTP response
@@ -64,7 +72,7 @@ void post_save(int fd, Cache &cache, const std::string &url, char *request_buf, 
 private:
 
 int _fd;
-std::string _filepath_root = "/home/xichuz/workspace/my_server/server_files/"; // TODO: make this configurable
+std::string _server_files_root;
 
 };
 

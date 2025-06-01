@@ -4,6 +4,8 @@
 
 using my_server::Http;
 
+static constexpr const char* path = "/home/xichuz/workspace/my_server/server_files";
+
 static char* call_find(Http &http, const std::string &req) {
     // std::string::data() returns a pointer to a mutable buffer in C++17+
     // so it's safe to cast away const here for our API.
@@ -11,7 +13,7 @@ static char* call_find(Http &http, const std::string &req) {
 }
 
 TEST(HttpFindBodyTest, CRLFCRLF) {
-    Http http;
+    Http http(path);
     std::string req =
         "POST /path HTTP/1.1\r\n"
         "Host: example.com\r\n"
@@ -26,7 +28,7 @@ TEST(HttpFindBodyTest, CRLFCRLF) {
 }
 
 TEST(HttpFindBodyTest, LF_LF) {
-    Http http;
+    Http http(path);
     std::string req =
         "POST /path HTTP/1.1\n"
         "Host: example.com\n"
@@ -41,7 +43,7 @@ TEST(HttpFindBodyTest, LF_LF) {
 }
 
 TEST(HttpFindBodyTest, CR_CR) {
-    Http http;
+    Http http(path);
     std::string req =
         "POST /foo HTTP/1.0\r"
         "Header: val\r"
@@ -55,7 +57,7 @@ TEST(HttpFindBodyTest, CR_CR) {
 }
 
 TEST(HttpFindBodyTest, MixedNewlines) {
-    Http http;
+    Http http(path);
     std::string req =
         "POST /mixed HTTP/1.1\r\n"
         "A: 1\n"
@@ -71,7 +73,7 @@ TEST(HttpFindBodyTest, MixedNewlines) {
 }
 
 TEST(HttpFindBodyTest, NoTerminator) {
-    Http http;
+    Http http(path);
     std::string req =
         "GET /no-body HTTP/1.1\r\n"
         "Host: example.com\r\n";

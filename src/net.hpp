@@ -1,3 +1,9 @@
+/**
+ * @file net.hpp
+ * @brief low-level networking code
+ * 
+ */
+
 #ifndef NET_H
 #define NET_H
 
