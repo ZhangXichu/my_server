@@ -12,7 +12,7 @@
     <button id="send">Send</button>
 
     <script>
-        const ws = new WebSocket("ws://localhost:3496/chatroom");
+        const ws = new WebSocket("ws://192.168.0.232:3496/chatroom");
 
         ws.onopen = () => {
             console.log("Connected to WebSocket server.");
